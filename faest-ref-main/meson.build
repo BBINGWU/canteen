@@ -1,3 +1,4 @@
+# ========== 1. 项目基本信息 ==========
 project(
   'faest-ref',
   ['c', 'cpp'],
@@ -11,17 +12,22 @@ project(
     'b_ndebug=if-release',
   ],
 )
-
+# 获取 C 和 C++ 编译器对象
 cc = meson.get_compiler('c')
 cpp = meson.get_compiler('cpp')
 conf_data = configuration_data()
 
+# ========== 2. 编译器特性检测 ==========
+
+# 初始化编译选项和宏
 # compile flags and defines
 flags = []
 c_flags = []
 cpp_flags = []
 defines = []
 
+
+# 根据不同编译器添加警告选项
 if cc.get_id() != 'msvc'
   c_flags += [
     '-Werror=implicit-function-declaration',
@@ -67,6 +73,7 @@ c_flags = cc.get_supported_arguments(flags) + cc.get_supported_arguments(c_flags
 cpp_flags = cpp.get_supported_arguments(flags) + cc.get_supported_arguments(cpp_flags)
 linker_flags = cc.get_supported_link_arguments(flags)
 
+# 检查支持哪些编译器特性，比如 __builtin_cpu_supports
 # check compiler if compiler supports __builtin_cpu_supports
 has_usable_builtin = cc.compiles(
   '''
@@ -80,6 +87,7 @@ has_usable_builtin = cc.compiles(
   include_directories: include_directories('.'),
 )
 
+# 检查是否支持 AES-NI, AVX2, _mm_loadu_si64
 # check compiler if compiler supports AES-NI
 aesni_flag = cc.get_supported_arguments('-maes')
 supports_aesni = cc.links(
@@ -127,11 +135,13 @@ int main() {
 )
 conf_data.set('HAVE_MM_LOADU_SI64', supports_loadu_si64)
 
+# 检查系统头文件的存在，比如 asm/hwcap.h
 # check availability of some headers
 conf_data.set('HAVE_ASM_HWCAP_H', cc.has_header('asm/hwcap.h'))
 conf_data.set('HAVE_SYS_RANDOM_H', cc.has_header('sys/random.h'))
 conf_data.set('HAVE_SYS_AUXV_H', cc.has_header('sys/auxv.h'))
 
+# 检查系统函数存在，比如 aligned_alloc, getrandom
 # check availability of some functions
 conf_data.set(
   'HAVE_ALIGNED_ALLOC',
@@ -167,6 +177,8 @@ conf_data.set(
   cc.has_header_symbol('pthread.h', 'pthread_setaffinity_np', args: defines),
 )
 
+
+# ========== 3. 参数集设置（Parameter Sets）==========
 # parameter sets
 # After changing the parameter sets, be sure to run crypto_sign_generator.py to create the corresponding meson files.
 parameter_sets = []
@@ -459,6 +471,7 @@ parameter_data.set('FAEST_128_LAMBDA', 128)
 parameter_data.set('FAEST_192_LAMBDA', 192)
 parameter_data.set('FAEST_256_LAMBDA', 256)
 
+# ========== 4. 检查系统依赖 ==========
 # dependencies
 openssl = dependency('openssl', required: get_option('openssl'))
 boost_program_options = dependency('boost', required: get_option('benchmarks'), modules: ['program_options'])
@@ -486,6 +499,7 @@ if host_machine.system() == 'windows'
   build_dependencies += cc.find_library('bcrypt')
 endif
 
+# ========== 5. Catch2（测试框架）准备 ==========
 # catch2 for benchmarks
 if get_option('benchmarks').enabled() and get_option('catch2').enabled()
   libcatch2 = static_library(
@@ -505,6 +519,7 @@ if get_option('benchmarks').enabled() and get_option('catch2').enabled()
   )
 endif
 
+# ========== 6. 配置生成头文件 ==========
 # generate config.h
 config_header = configure_file(output: 'config.h', output_format: 'c', configuration: conf_data)
 defines += '-DHAVE_CONFIG_H'
@@ -536,6 +551,7 @@ faest_aes_256 = configure_file(
 
 include_directories = [include_directories('.')]
 
+# ========== 7. 定义源文件 ==========
 # source files
 faest_sources = files(
   'aes.c',
@@ -617,6 +633,7 @@ else
   endif
 endif
 
+# 为每一个参数集（faest_128s, faest_128f...）生成 faest_param.h / faest_param.c
 # generate files for parameter sets
 foreach parameter_set : parameter_sets
   headers += configure_file(
@@ -631,6 +648,8 @@ foreach parameter_set : parameter_sets
   )
 endforeach
 
+
+# ========== 8. 生成库文件 ==========
 # static faest library
 libfaest_no_random_static = static_library(
   'faest_no_random',
@@ -684,6 +703,8 @@ libfaest = shared_library(
 )
 libfaest_dependency = declare_dependency(link_with: libfaest, include_directories: include_directories)
 
+
+# ========== 9. 安装头文件和生成 pkg-config 文件 ==========
 # install headers
 install_headers(headers)
 
