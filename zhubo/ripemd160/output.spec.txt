@@ -1,0 +1,2 @@
+return_value: { h: uint32[5]; };
+INPUT_A: { d: uint32[16]; };

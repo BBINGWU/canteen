@@ -1,0 +1,26 @@
+{
+	"InstallScripts" : 
+	[
+		"/Users/bingwu/Downloads/\u6bd5\u4e1a\u8bba\u6587/code/zhubo/TinyGarble/build/cmake_install.cmake",
+		"/Users/bingwu/Downloads/\u6bd5\u4e1a\u8bba\u6587/code/zhubo/TinyGarble/build/a23/cmake_install.cmake",
+		"/Users/bingwu/Downloads/\u6bd5\u4e1a\u8bba\u6587/code/zhubo/TinyGarble/build/a23/aes/cmake_install.cmake",
+		"/Users/bingwu/Downloads/\u6bd5\u4e1a\u8bba\u6587/code/zhubo/TinyGarble/build/a23/bubble-sort/cmake_install.cmake",
+		"/Users/bingwu/Downloads/\u6bd5\u4e1a\u8bba\u6587/code/zhubo/TinyGarble/build/a23/compare/cmake_install.cmake",
+		"/Users/bingwu/Downloads/\u6bd5\u4e1a\u8bba\u6587/code/zhubo/TinyGarble/build/a23/merge-sort/cmake_install.cmake",
+		"/Users/bingwu/Downloads/\u6bd5\u4e1a\u8bba\u6587/code/zhubo/TinyGarble/build/a23/dijkstra/cmake_install.cmake",
+		"/Users/bingwu/Downloads/\u6bd5\u4e1a\u8bba\u6587/code/zhubo/TinyGarble/build/a23/hamming/cmake_install.cmake",
+		"/Users/bingwu/Downloads/\u6bd5\u4e1a\u8bba\u6587/code/zhubo/TinyGarble/build/a23/mem-test/cmake_install.cmake",
+		"/Users/bingwu/Downloads/\u6bd5\u4e1a\u8bba\u6587/code/zhubo/TinyGarble/build/a23/mul/cmake_install.cmake",
+		"/Users/bingwu/Downloads/\u6bd5\u4e1a\u8bba\u6587/code/zhubo/TinyGarble/build/a23/matrix-mul/cmake_install.cmake",
+		"/Users/bingwu/Downloads/\u6bd5\u4e1a\u8bba\u6587/code/zhubo/TinyGarble/build/a23/sum/cmake_install.cmake",
+		"/Users/bingwu/Downloads/\u6bd5\u4e1a\u8bba\u6587/code/zhubo/TinyGarble/build/a23/sha3/cmake_install.cmake",
+		"/Users/bingwu/Downloads/\u6bd5\u4e1a\u8bba\u6587/code/zhubo/TinyGarble/build/a23/cordic/cmake_install.cmake",
+		"/Users/bingwu/Downloads/\u6bd5\u4e1a\u8bba\u6587/code/zhubo/TinyGarble/build/a23/lib/cmake_install.cmake",
+		"/Users/bingwu/Downloads/\u6bd5\u4e1a\u8bba\u6587/code/zhubo/TinyGarble/build/crypto/cmake_install.cmake",
+		"/Users/bingwu/Downloads/\u6bd5\u4e1a\u8bba\u6587/code/zhubo/TinyGarble/build/garbled_circuit/cmake_install.cmake",
+		"/Users/bingwu/Downloads/\u6bd5\u4e1a\u8bba\u6587/code/zhubo/TinyGarble/build/scd/cmake_install.cmake",
+		"/Users/bingwu/Downloads/\u6bd5\u4e1a\u8bba\u6587/code/zhubo/TinyGarble/build/tcpip/cmake_install.cmake",
+		"/Users/bingwu/Downloads/\u6bd5\u4e1a\u8bba\u6587/code/zhubo/TinyGarble/build/util/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

@@ -17,6 +17,9 @@
 
 #include <string.h>
 
+// #include <time.h>
+// #include <stdio.h>
+
 // helpers to compute position in signature (sign)
 
 ATTR_PURE static inline uint8_t* signature_c(uint8_t* base_ptr, unsigned int index,
@@ -411,6 +414,11 @@ uint8_t a0_tilde[MAX_LAMBDA_BYTES];
 aes_prove(a0_tilde, signature_a1_tilde(sig, params), signature_a2_tilde(sig, params),
 witness, u + ell_bytes, V, owf_input, owf_output, chall_2, params);
 
+size_t proof_size = sizeof(a0_tilde) + sizeof(signature_a1_tilde) + sizeof(signature_a2_tilde);
+printf("AES Proof size: %zu bytes\n", proof_size);
+
+
+
 // TODO：上面的aes_prove()改成owf_prove()
 
 // 释放中间内存
@@ -525,6 +533,8 @@ int faest_verify(const uint8_t* msg, size_t msglen, const uint8_t* sig, const ui
   aes_verify(a0_tilde, d, q, chall_2, dsignature_chall_3(sig, params),
              dsignature_a1_tilde(sig, params), dsignature_a2_tilde(sig, params), owf_input,
              owf_output, params);
+
+
   free_pointer_array(&q);
 
   // ::20-21 步骤：重新生成 challenge3 并验证

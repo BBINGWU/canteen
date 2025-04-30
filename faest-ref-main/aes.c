@@ -2,6 +2,97 @@
  *  SPDX-License-Identifier: MIT
  */
 
+// sha256
+#include <stdint.h>
+#include <assert.h>
+#include <string.h>
+#include <stddef.h>
+#include <stdio.h>     // 加这个，为了 printf()
+#include <time.h>      // 加这个，为了 clock()
+
+typedef struct {
+    uint32_t state[8];
+    uint64_t bitcount;
+    uint8_t buffer[64];
+} SHA256_CTX;
+
+/* SHA-256 constants */
+static const uint32_t K[64] = {
+  0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+  0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+  0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+  0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+  0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+  0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+  0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+  0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2
+};
+
+#define ROTR(x,n) (((x)>>(n))|((x)<<(32-(n))))
+#define CH(x,y,z) (((x)&(y))^((~(x))&(z)))
+#define MAJ(x,y,z) (((x)&(y))^((x)&(z))^((y)&(z)))
+#define SIG0(x) (ROTR(x,2)^ROTR(x,13)^ROTR(x,22))
+#define SIG1(x) (ROTR(x,6)^ROTR(x,11)^ROTR(x,25))
+#define sig0(x) (ROTR(x,7)^ROTR(x,18)^((x)>>3))
+#define sig1(x) (ROTR(x,17)^ROTR(x,19)^((x)>>10))
+
+static void sha256_transform(SHA256_CTX *ctx, const uint8_t data[64]) {
+  uint32_t W[64], a,b,c,d,e,f,g,h,T1,T2;
+  for(int i=0;i<16;i++) {
+      W[i] = (data[4*i]<<24) | (data[4*i+1]<<16) | (data[4*i+2]<<8) | (data[4*i+3]);
+  }
+  for(int i=16;i<64;i++) {
+      W[i] = sig1(W[i-2]) + W[i-7] + sig0(W[i-15]) + W[i-16];
+  }
+  a=ctx->state[0]; b=ctx->state[1]; c=ctx->state[2]; d=ctx->state[3];
+  e=ctx->state[4]; f=ctx->state[5]; g=ctx->state[6]; h=ctx->state[7];
+  for(int i=0;i<64;i++) {
+      T1 = h + SIG1(e) + CH(e,f,g) + K[i] + W[i];
+      T2 = SIG0(a) + MAJ(a,b,c);
+      h=g; g=f; f=e; e=d+T1;
+      d=c; c=b; b=a; a=T1+T2;
+  }
+  ctx->state[0]+=a; ctx->state[1]+=b; ctx->state[2]+=c; ctx->state[3]+=d;
+  ctx->state[4]+=e; ctx->state[5]+=f; ctx->state[6]+=g; ctx->state[7]+=h;
+}
+
+void SHA256_Init(SHA256_CTX *ctx) {
+  ctx->state[0]=0x6a09e667; ctx->state[1]=0xbb67ae85;
+  ctx->state[2]=0x3c6ef372; ctx->state[3]=0xa54ff53a;
+  ctx->state[4]=0x510e527f; ctx->state[5]=0x9b05688c;
+  ctx->state[6]=0x1f83d9ab; ctx->state[7]=0x5be0cd19;
+  ctx->bitcount=0; memset(ctx->buffer,0,64);
+}
+
+void SHA256_Update(SHA256_CTX *ctx, const void *data, size_t len) {
+  size_t i,j;
+  j = (ctx->bitcount>>3) % 64;
+  ctx->bitcount += (uint64_t)len<<3;
+  for(i=0;i<len;i++) {
+      ctx->buffer[j++] = ((const uint8_t*)data)[i];
+      if(j==64) { sha256_transform(ctx, ctx->buffer); j=0; }
+  }
+}
+
+void SHA256_Final(uint8_t digest[32], SHA256_CTX *ctx) {
+  uint8_t bits[8];
+  for(int i=0;i<8;i++) bits[7-i] = ctx->bitcount >> (i*8);
+  size_t idx = (ctx->bitcount>>3) % 64;
+  ctx->buffer[idx++] = 0x80;
+  if(idx>56) { while(idx<64) ctx->buffer[idx++]=0; sha256_transform(ctx,ctx->buffer); idx=0; }
+  while(idx<56) ctx->buffer[idx++]=0;
+  memcpy(ctx->buffer+56,bits,8);
+  sha256_transform(ctx,ctx->buffer);
+  for(int i=0;i<8;i++) {
+      digest[4*i]   = (ctx->state[i]>>24)&0xff;
+      digest[4*i+1] = (ctx->state[i]>>16)&0xff;
+      digest[4*i+2] = (ctx->state[i]>>8)&0xff;
+      digest[4*i+3] = ctx->state[i]&0xff;
+  }
+}
+
+
+
 #if defined(HAVE_CONFIG_H)
 #include <config.h>
 #endif
@@ -21,7 +112,7 @@
 #elif defined(_WIN32)
 #include <windows.h>
 #endif
-#include <string.h>
+// #include <string.h>
 
 #define KEY_WORDS_128 4
 #define KEY_WORDS_192 6
@@ -1022,6 +1113,7 @@ void prg_4_lambda(const uint8_t* key, const uint8_t* iv, uint32_t tweak, uint8_t
   generic_prg(key, internal_iv, out, seclvl, seclvl * 4 / 8);
 }
 
+// TODO：要改一个sha256和ripmd的实现出来
 void aes_extend_witness(uint8_t* w, const uint8_t* key, const uint8_t* in,
                         const faest_paramset_t* params) {
   const unsigned int lambda      = params->lambda;
@@ -1064,6 +1156,7 @@ void aes_extend_witness(uint8_t* w, const uint8_t* key, const uint8_t* in,
     }
     break;
   default:
+  // 进这个
     aes128_init_round_keys(&round_keys, key);
     break;
   }
@@ -1160,4 +1253,88 @@ void aes_extend_witness(uint8_t* w, const uint8_t* key, const uint8_t* in,
   }
 
   assert(w - w_out == params->l / 8);
+}
+
+
+void sha256_extend_witness(uint8_t* w, const uint8_t* key, const uint8_t* in, const faest_paramset_t* params) {
+  (void)key; // SHA256版的extend_witness中，key参数无用，忽略
+
+  clock_t start_time = clock(); // 记录开始时间
+
+  const unsigned int num_rounds = 64; // SHA-256固定有64轮
+  const unsigned int blocksize = 512; // 每个消息块大小512位
+
+#if !defined(NDEBUG)
+  uint8_t* const w_out = w; // 用于debug模式下检查Witness长度
+#endif
+
+  // 1. 解析输入（512位 = 64字节）为16个32位字W[0..15]
+  uint32_t W[64];
+  for (int i = 0; i < 16; ++i) {
+    W[i] = ((uint32_t)in[4*i] << 24) | ((uint32_t)in[4*i+1] << 16) | ((uint32_t)in[4*i+2] << 8) | ((uint32_t)in[4*i+3]);
+  }
+  // 扩展消息调度数组W到64个word
+  for (int i = 16; i < 64; ++i) {
+    W[i] = sig1(W[i-2]) + W[i-7] + sig0(W[i-15]) + W[i-16];
+  }
+
+  // 保存全部W[i]到Witness
+  for (int i = 0; i < 64; ++i) {
+    w[0] = (W[i] >> 24) & 0xff;
+    w[1] = (W[i] >> 16) & 0xff;
+    w[2] = (W[i] >> 8) & 0xff;
+    w[3] = W[i] & 0xff;
+    w += 4;
+  }
+
+  // 2. 初始化SHA-256的内部状态(a,b,c,d,e,f,g,h)
+  uint32_t a = 0x6a09e667, b = 0xbb67ae85, c = 0x3c6ef372, d = 0xa54ff53a;
+  uint32_t e = 0x510e527f, f = 0x9b05688c, g = 0x1f83d9ab, h = 0x5be0cd19;
+
+  // 3. 进行SHA-256压缩主循环
+  for (int i = 0; i < 64; ++i) {
+    uint32_t T1 = h + SIG1(e) + CH(e,f,g) + K[i] + W[i];
+    uint32_t T2 = SIG0(a) + MAJ(a,b,c);
+
+    h = g;
+    g = f;
+    f = e;
+    e = d + T1;
+    d = c;
+    c = b;
+    b = a;
+    a = T1 + T2;
+
+    if (i % 2 == 0) {
+      // 每两轮保存一次完整寄存器(a,b,c,d,e,f,g,h)
+      for (int j = 0; j < 8; ++j) {
+        uint32_t reg = ((uint32_t[]){a,b,c,d,e,f,g,h})[j];
+        w[0] = (reg >> 24) & 0xff;
+        w[1] = (reg >> 16) & 0xff;
+        w[2] = (reg >> 8) & 0xff;
+        w[3] = reg & 0xff;
+        w += 4;
+      }
+    } else {
+      // 奇数轮保存部分寄存器位（高4位a，低4位e，中间4位h）
+      uint8_t y_a = (a >> 28) & 0xf;
+      uint8_t y_e = (e >> 0) & 0xf;
+      uint8_t y_h = (h >> 12) & 0xf;
+      uint8_t combined = (y_a << 4) | y_e;
+      w[0] = combined;
+      w[1] = y_h;
+      w += 2; // 每次保存12位，用2字节打包
+    }
+  }
+
+// #if !defined(NDEBUG)
+//   // Debug模式下检查Witness长度是否正确
+//   assert((uintptr_t)(w - w_out) == params->l / 8);
+// #endif
+
+  clock_t end_time = clock(); // 记录结束时间
+  double elapsed_time_ms = (double)(end_time - start_time) * 1000.0 / CLOCKS_PER_SEC;
+
+  printf("sha256_extend_witness finished in %.3f ms\n", elapsed_time_ms);
+  printf("Witness size: %u bytes\n", params->l / 8);
 }

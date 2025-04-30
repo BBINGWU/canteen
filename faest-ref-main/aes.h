@@ -55,6 +55,8 @@ void aes_increment_iv(uint8_t* iv);
 uint8_t invnorm(uint8_t in);
 #endif
 
+void sha256_extend_witness(uint8_t* w, const uint8_t* key, const uint8_t* in, const faest_paramset_t* params);
+
 void aes_extend_witness(uint8_t* w, const uint8_t* key, const uint8_t* in,
                         const faest_paramset_t* params);
 
